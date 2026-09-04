@@ -1,37 +1,131 @@
-<!-- 
-    1. 아래 게임의 문제점을 발견하고,
-   개선점을 제시하세요. 정답은 없습니다. 
-    2. 디자인을 개선해보세요.
-    3. css, javascript 파일을 외부로 빼서 따로 관리하도록 변경해주시고
-    4. repository를 새로 만들어서
-    5. github 페이지에 배포해보세요 (index.html이 아니면 파일명까지 다 적어줘야 경로가 됩니다)
- -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Typing Game</title>
-
-    <link rel="stylesheet" href="exam4.css" />
+    <meta name="description" content="한글과 영어 문장을 연습하고 타자 기록을 확인하는 브라우저 타자연습 프로그램">
+    <title>타닥 — 타자연습</title>
+    <link rel="stylesheet" href="exam4.css">
 </head>
 <body>
-    <h1>Typing Game</h1>
-    <p class="guide">아래 문자 또는 단어를 입력하세요. (소/대문자 구분)</p>
+    <div class="app-shell">
+        <header class="app-header">
+            <button class="brand" id="brandButton" type="button" aria-label="메인 화면으로 이동">
+                <span class="brand-mark" aria-hidden="true">T</span><span>타닥</span>
+            </button>
+            <div class="header-status"><span class="status-dot" aria-hidden="true"></span>브라우저에 기록 저장</div>
+        </header>
 
-    <div id="targetChar"></div>
+        <main>
+            <section class="screen home-screen is-active" id="homeScreen" aria-labelledby="homeTitle">
+                <div class="home-heading">
+                    <p class="eyebrow">TYPING STUDIO</p>
+                    <h1 id="homeTitle">오늘의 문장을<br><span>내 속도로.</span></h1>
+                    <p>짧게 집중하고, 정확하게 입력하고, 어제의 기록을 넘어보세요.</p>
+                </div>
+                <div class="mode-grid" aria-label="연습 모드 선택">
+                    <button class="mode-card mode-card--measure" type="button" data-mode="measure">
+                        <span class="mode-number">01</span>
+                        <span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 1.5M9 2h6M12 5V2"></path></svg></span>
+                        <span class="mode-name">시간 측정</span>
+                        <span class="mode-description">문장 전체를 완성하는 시간을 측정합니다.</span>
+                        <span class="mode-arrow" aria-hidden="true">→</span>
+                    </button>
+                    <button class="mode-card mode-card--attack" type="button" data-mode="attack">
+                        <span class="mode-number">02</span>
+                        <span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13H11l-1 9L19.5 11H13z"></path></svg></span>
+                        <span class="mode-name">타임 어택</span>
+                        <span class="mode-description">60초 동안 정확히 몇 타를 치는지 도전합니다.</span>
+                        <span class="mode-arrow" aria-hidden="true">→</span>
+                    </button>
+                    <button class="mode-card mode-card--ranking" id="rankingButton" type="button">
+                        <span class="mode-number">03</span>
+                        <span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 21V10h8v11M5 21h14M9 6a3 3 0 1 1 6 0c0 1.2-.7 2.2-1.7 2.7L12 11l-1.3-2.3A3 3 0 0 1 9 6Z"></path></svg></span>
+                        <span class="mode-name">랭킹</span>
+                        <span class="mode-description">문장별 최고 기록과 성장 과정을 확인합니다.</span>
+                        <span class="mode-arrow" aria-hidden="true">→</span>
+                    </button>
+                </div>
+                <div class="home-tip"><span class="keycap">TIP</span><p>첫 글자를 입력하는 순간 측정이 시작됩니다.</p></div>
+            </section>
 
-    <div class="stats">
-        <div id="score">점수: 0</div>
-        <div id="timer">남은 시간: 20</div>
+            <section class="screen selection-screen" id="selectionScreen" aria-labelledby="selectionTitle">
+                <button class="back-button" type="button" data-back="home">← <span>메인으로</span></button>
+                <div class="section-heading">
+                    <p class="eyebrow" id="selectionEyebrow">시간 측정</p>
+                    <h2 id="selectionTitle">어떤 문장으로<br>연습할까요?</h2>
+                    <p id="selectionDescription">문장을 골라 기록 측정을 시작하세요.</p>
+                </div>
+                <div class="text-list" id="textList"></div>
+            </section>
+
+            <section class="screen practice-screen" id="practiceScreen" aria-labelledby="practiceTitle">
+                <div class="practice-topbar">
+                    <button class="back-button" type="button" data-back="selection">← <span>문장 선택</span></button>
+                    <span class="mode-badge" id="practiceModeBadge">시간 측정</span>
+                </div>
+                <div class="practice-heading">
+                    <div><p class="eyebrow" id="practiceCategory">KOREAN · 0자</p><h2 id="practiceTitle">문장 제목</h2></div>
+                    <div class="live-stats" aria-label="실시간 기록">
+                        <div class="stat stat--primary"><span id="timeLabel">경과 시간</span><strong id="timeValue">00:00.0</strong></div>
+                        <div class="stat"><span>타수</span><strong><span id="cpmValue">0</span><small> CPM</small></strong></div>
+                        <div class="stat"><span>정확도</span><strong><span id="accuracyValue">100</span><small>%</small></strong></div>
+                    </div>
+                </div>
+                <div class="progress-track" aria-hidden="true"><span id="progressBar"></span></div>
+                <div class="typing-paper">
+                    <div class="target-text" id="targetText" aria-label="입력할 원문"></div>
+                    <label class="sr-only" for="typingInput">위 문장을 입력하세요</label>
+                    <textarea id="typingInput" rows="4" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="여기에 첫 글자를 입력하면 시작됩니다."></textarea>
+                </div>
+                <div class="practice-actions">
+                    <p><span class="mini-dot"></span><span id="practiceHint">원문과 똑같이 입력해 주세요.</span></p>
+                    <button class="text-button" id="restartButton" type="button">↻ 다시 시작</button>
+                </div>
+            </section>
+
+            <section class="screen result-screen" id="resultScreen" aria-labelledby="resultTitle" tabindex="-1">
+                <div class="result-card">
+                    <div class="result-emblem" aria-hidden="true">✓</div>
+                    <p class="eyebrow" id="resultEyebrow">연습 완료</p>
+                    <h2 id="resultTitle">멋진 기록이에요!</h2>
+                    <p class="result-summary" id="resultSummary">문장을 정확하게 완성했습니다.</p>
+                    <div class="record-highlight">
+                        <span id="primaryResultLabel">완주 시간</span><strong id="primaryResultValue">00:00.0</strong>
+                        <span class="new-record" id="newRecordBadge" hidden>NEW BEST</span>
+                    </div>
+                    <div class="result-stats">
+                        <div><span>분당 타수</span><strong id="resultCpm">0</strong><small>CPM</small></div>
+                        <div><span>정확도</span><strong id="resultAccuracy">100</strong><small>%</small></div>
+                        <div><span>오타</span><strong id="resultErrors">0</strong><small>회</small></div>
+                    </div>
+                    <div class="result-actions">
+                        <button class="primary-button" id="retryButton" type="button">같은 문장 다시 하기</button>
+                        <button class="secondary-button" id="chooseAnotherButton" type="button">다른 문장 선택</button>
+                        <button class="ghost-button" type="button" data-back="home">메인으로</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="screen ranking-screen" id="rankingScreen" aria-labelledby="rankingTitle">
+                <button class="back-button" type="button" data-back="home">← <span>메인으로</span></button>
+                <div class="ranking-heading">
+                    <div><p class="eyebrow">PERSONAL RECORDS</p><h2 id="rankingTitle">나의 랭킹</h2><p>시간 측정에서 완주한 기록이 저장됩니다.</p></div>
+                    <button class="danger-button" id="clearRankingsButton" type="button">기록 초기화</button>
+                </div>
+                <div class="ranking-tabs" id="rankingTabs" role="tablist" aria-label="문장별 랭킹"></div>
+                <div class="ranking-table-wrap">
+                    <table>
+                        <thead><tr><th scope="col">순위</th><th scope="col">완주 시간</th><th scope="col">타수</th><th scope="col">정확도</th><th scope="col">날짜</th></tr></thead>
+                        <tbody id="rankingBody"></tbody>
+                    </table>
+                    <div class="empty-state" id="emptyRanking" hidden><span aria-hidden="true">⌨</span><strong>아직 기록이 없습니다.</strong><p>시간 측정 모드에서 첫 기록을 만들어 보세요.</p></div>
+                </div>
+            </section>
+        </main>
+        <footer><span>오늘도 한 글자씩, 타닥.</span><span>기록은 이 기기에만 저장됩니다.</span></footer>
     </div>
-
-    <div class="buttons">
-        <button id="startButton" onclick="startGame()">Start</button>
-        <button id="resetButton" onclick="resetGame()">Reset</button>
-    </div>
-
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="exam4.js"></script>
 </body>
 </html>
-
