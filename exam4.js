@@ -647,13 +647,13 @@ function updateHud() {
         el.barTime.classList.remove('is-urgent');
     }
 
-    state.typedValue = '';
-    state.lastCommittedValue = '';
-    state.awaitingNext = false;
-    elements.typingInput.value = '';
-    elements.practiceHint.textContent = '현재 구간을 정확히 입력한 뒤 Enter를 누르세요.';
-    updateSegmentMeta();
-    renderTypingProgress();
+    // state.typedValue = '';
+    // state.lastCommittedValue = '';
+    // state.awaitingNext = false;
+    // elements.typingInput.value = '';
+    // elements.practiceHint.textContent = '현재 구간을 정확히 입력한 뒤 Enter를 누르세요.';
+    // updateSegmentMeta();
+    // renderTypingProgress();
 }
 
 /* =========================================================
