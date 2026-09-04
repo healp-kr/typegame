@@ -176,6 +176,48 @@
         </div>
     </div>
 
+            <section class="screen result-screen" id="resultScreen" aria-labelledby="resultTitle" tabindex="-1">
+                <div class="result-card">
+                    <div class="result-emblem" aria-hidden="true">✓</div>
+                    <p class="eyebrow" id="resultEyebrow">연습 완료</p>
+                    <h2 id="resultTitle">멋진 기록이에요!</h2>
+                    <p class="result-summary" id="resultSummary">문장을 정확하게 완성했습니다.</p>
+                    <div class="record-highlight">
+                        <span id="primaryResultLabel">완주 시간</span><strong id="primaryResultValue">00:00.0</strong>
+                        <span class="new-record" id="newRecordBadge" hidden>NEW BEST</span>
+                    </div>
+                    <div class="result-stats">
+                        <div><span>분당 타수</span><strong id="resultCpm">0</strong><small>CPM</small></div>
+                        <div><span>정확도</span><strong id="resultAccuracy">100</strong><small>%</small></div>
+                        <div><span>오타</span><strong id="resultErrors">0</strong><small>회</small></div>
+                    </div>
+                    <div class="result-actions">
+                        <button class="primary-button" id="retryButton" type="button">같은 문장 다시 하기</button>
+                        <button class="secondary-button" id="chooseAnotherButton" type="button">다른 문장 선택</button>
+                        <button class="ghost-button" type="button" data-back="home">메인으로</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="screen ranking-screen" id="rankingScreen" aria-labelledby="rankingTitle">
+                <button class="back-button" type="button" data-back="home">← <span>메인으로</span></button>
+                <div class="ranking-heading">
+                    <div><p class="eyebrow">PERSONAL RECORDS</p><h2 id="rankingTitle">나의 랭킹</h2><p>시간 측정에서 완주한 기록이 저장됩니다.</p></div>
+                    <button class="danger-button" id="clearRankingsButton" type="button">기록 초기화</button>
+                </div>
+                <div class="ranking-tabs" id="rankingTabs" role="tablist" aria-label="문장별 랭킹"></div>
+                <div class="ranking-table-wrap">
+                    <table>
+                        <thead><tr><th scope="col">순위</th><th scope="col">완주 시간</th><th scope="col">타수</th><th scope="col">정확도</th><th scope="col">날짜</th></tr></thead>
+                        <tbody id="rankingBody"></tbody>
+                    </table>
+                    <div class="empty-state" id="emptyRanking" hidden><span aria-hidden="true">⌨</span><strong>아직 기록이 없습니다.</strong><p>시간 측정 모드에서 첫 기록을 만들어 보세요.</p></div>
+                </div>
+            </section>
+        </main>
+        <footer><span>오늘도 한 글자씩, 타닥.</span><span>기록은 이 기기에만 저장됩니다.</span></footer>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="exam4.js"></script>
 </body>
 
