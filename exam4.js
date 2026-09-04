@@ -1,244 +1,650 @@
+/* =========================================================
+   LyricType - 가사 타이핑 게임
+   ---------------------------------------------------------
+   기존 "한 글자 / 단어" 타이핑 게임을 "노래 가사 문장" 타이핑으로 개편.
+
+   [주요 변경점]
+   - keydown 한 글자 판정 -> input 요소 기반 문장 판정
+     (keydown 방식은 한글 IME 조합 중인 글자를 비교할 수 없어서 한글이 불가능했음)
+   - 곡 선택 / 플레이 / 결과 3개 화면 전환
+   - 흩어져 있던 전역 변수를 state 객체 하나로 통합
+   - 인라인 onclick 제거, addEventListener 로 일원화
+   ========================================================= */
 'use strict';
 
-const typingTexts = [
+/* =========================================================
+   1. 노래 데이터
+   ---------------------------------------------------------
+   lines 배열의 한 줄이 한 문제가 된다.
+   여기 기본 수록곡은 저작권이 만료된 전래/고전 곡과 직접 쓴 창작 가사로만 채웠다.
+   좋아하는 최신곡은 화면의 [+ 내 노래 추가] 버튼으로 직접 넣어서 플레이할 수 있다.
+   ========================================================= */
+const BUILTIN_SONGS = [
     {
-        id: 'anthem', title: '애국가 1절', category: '대한민국 국가', language: 'KOREAN',
-        segments: ['동해 물과 백두산이 마르고 닳도록', '하느님이 보우하사 우리나라 만세.', '무궁화 삼천리 화려 강산', '대한 사람, 대한으로 길이 보전하세.']
+        id: 'arirang',
+        title: '아리랑',
+        artist: '한국 민요',
+        emoji: '⛰️',
+        color: '#e35d6a',
+        lang: 'ko',
+        difficulty: '쉬움',
+        timeLimit: 45,
+        lines: [
+            '아리랑 아리랑 아라리요',
+            '아리랑 고개로 넘어간다',
+            '나를 버리고 가시는 님은',
+            '십리도 못가서 발병난다'
+        ]
     },
     {
-        id: 'korean-song', title: '별빛 산책', category: '한국어 창작 가사', language: 'KOREAN',
-        segments: ['저녁 바람이 창가에 머물면', '작은 별 하나 마음에 내려와.', '천천히 걸어도 괜찮다고,', '오늘의 나를 조용히 안아 준다.']
+        id: 'twinkle',
+        title: 'Twinkle, Twinkle, Little Star',
+        artist: 'Jane Taylor (1806)',
+        emoji: '✨',
+        color: '#4f7cff',
+        lang: 'en',
+        difficulty: '쉬움',
+        timeLimit: 55,
+        lines: [
+            'Twinkle, twinkle, little star,',
+            'How I wonder what you are!',
+            'Up above the world so high,',
+            'Like a diamond in the sky.'
+        ]
     },
     {
-        id: 'english-song', title: 'Bright Tomorrow', category: '영어 창작 가사', language: 'ENGLISH',
-        segments: ['Morning light is on the window,', 'drawing golden lines.', 'Take another little step', 'and leave the doubt behind.', 'We can find a brighter day', 'in every word we write.']
+        id: 'firstcommit',
+        title: '첫 커밋',
+        artist: 'LyricType 창작곡',
+        emoji: '🌱',
+        color: '#1db954',
+        lang: 'ko',
+        difficulty: '보통',
+        timeLimit: 80,
+        lines: [
+            '빈 폴더 하나에서 시작했어',
+            '이름 짓는 데만 삼십 분이 걸렸지',
+            '무엇을 만들지는 아직 몰라도',
+            '오늘은 여기까지만 남겨두기로 해',
+            '작게 적어둔 한 줄의 메시지',
+            '언젠가 돌아와서 웃게 될 자리'
+        ]
+    },
+    {
+        id: 'amazing',
+        title: 'Amazing Grace',
+        artist: 'John Newton (1779)',
+        emoji: '🕊️',
+        color: '#b07cff',
+        lang: 'en',
+        difficulty: '보통',
+        timeLimit: 65,
+        lines: [
+            'Amazing grace, how sweet the sound,',
+            'That saved a wretch like me.',
+            'I once was lost, but now am found,',
+            'Was blind, but now I see.'
+        ]
+    },
+    {
+        id: 'auldlang',
+        title: 'Auld Lang Syne',
+        artist: 'Robert Burns (1788)',
+        emoji: '🥂',
+        color: '#f0a53d',
+        lang: 'en',
+        difficulty: '보통',
+        timeLimit: 70,
+        lines: [
+            'Should auld acquaintance be forgot,',
+            'And never brought to mind?',
+            'Should auld acquaintance be forgot,',
+            'And auld lang syne?',
+            'For auld lang syne, my dear,',
+            "We'll take a cup of kindness yet."
+        ]
+    },
+    {
+        id: 'threeam',
+        title: '새벽 세 시의 코드',
+        artist: 'LyricType 창작곡',
+        emoji: '🌙',
+        color: '#2f6fd0',
+        lang: 'ko',
+        difficulty: '어려움',
+        timeLimit: 110,
+        lines: [
+            '새벽 세 시 모니터만 켜져 있어',
+            '커서는 깜빡이고 나도 깜빡여',
+            '어제 쓴 코드가 낯설게 느껴져',
+            '주석 한 줄 없이 나를 바라봐',
+            '콘솔에 찍힌 건 undefined 하나',
+            '그래도 한 줄만 더 써보기로 해',
+            '빨간 밑줄이 사라지는 그 순간',
+            '나는 조금 더 나은 사람이 돼'
+        ]
+    },
+    {
+        id: 'midnight',
+        title: 'Midnight Commit',
+        artist: 'LyricType 창작곡',
+        emoji: '☕',
+        color: '#8c6d4f',
+        lang: 'en',
+        difficulty: '어려움',
+        timeLimit: 115,
+        lines: [
+            'Coffee going cold beside the keyboard,',
+            'Every tab is open, none of them are read.',
+            'I have been here since the sun went down,',
+            'Chasing one small bug around my head.',
+            'Nothing works and then it works,',
+            'And I will never really know the reason why.',
+            'Push it to the branch and let it go,',
+            'Say good night, my little midnight commit.'
+        ]
     }
 ];
 
-const STORAGE_KEY = 'typingGame.rankings.v1';
-const ATTACK_DURATION_MS = 60000;
+/* 사용자가 추가한 곡에 랜덤으로 붙일 커버 이모지 / 색 */
+const CUSTOM_EMOJIS = ['🎧', '🎤', '💿', '🎹', '🔥', '🌊', '🍀', '🌸', '⚡', '🪐'];
+const CUSTOM_COLORS = ['#1db954', '#4f7cff', '#e35d6a', '#b07cff', '#f0a53d', '#12b5a4'];
 
+/* =========================================================
+   2. 점수 / 저장소 설정
+   ========================================================= */
+const POINT_PER_CHAR = 10;   // 맞은 글자당 점수
+const PENALTY_PER_CHAR = 5;  // 틀린 글자당 감점
+const LINE_BONUS = 50;       // 한 줄 넘길 때마다
+const PERFECT_BONUS = 100;   // 오타 없이 넘겼을 때 추가
+const TIME_BONUS = 3;        // 도전 모드: 한 줄 완료 시 더해주는 초
+const TIME_BONUS_PERFECT = 2; // 오타 없이 넘겼을 때 추가로 더해주는 초
+const MAX_COMBO_MULTI = 10;  // 콤보 배수 상한 (1.0 ~ 2.0배)
+
+const STORE_CUSTOM = 'lyricType.customSongs';
+const STORE_BEST = 'lyricType.bestRecords';
+
+/* =========================================================
+   3. 게임 상태
+   ========================================================= */
 const state = {
-    screen: 'home', mode: null, selectedTextId: null, startedAt: null, timerId: null,
-    typedValue: '', lastCommittedValue: '', correctCount: 0, totalInputCount: 0,
-    errorCount: 0, completedCycles: 0, segmentIndex: 0, awaitingNext: false,
-    isRunning: false, isComposing: false,
-    selectedRankingId: typingTexts[0].id
+    mode: 'challenge',   // 'challenge' | 'practice'
+    song: null,
+    lineIndex: 0,
+    score: 0,
+    combo: 0,
+    bestCombo: 0,
+    typedChars: 0,       // 확정된 총 입력 글자 수
+    correctChars: 0,     // 그중 맞은 글자 수
+    perfectLines: 0,
+    startTs: 0,
+    deadline: 0,         // 도전 모드 종료 시각(ms)
+    elapsed: 0,          // 초
+    running: false,
+    composing: false,    // 한글 IME 조합 중인지
+    lastSubmitTs: 0,     // 마지막으로 줄을 확정한 시각 (연속 확정 방지용)
+    timerId: null,
+    countdownId: null
 };
 
-const elements = {
-    screens: [...document.querySelectorAll('.screen')],
-    textList: document.getElementById('textList'),
-    selectionEyebrow: document.getElementById('selectionEyebrow'),
-    selectionDescription: document.getElementById('selectionDescription'),
-    practiceModeBadge: document.getElementById('practiceModeBadge'),
-    practiceCategory: document.getElementById('practiceCategory'),
-    practiceTitle: document.getElementById('practiceTitle'),
-    timeLabel: document.getElementById('timeLabel'),
-    timeValue: document.getElementById('timeValue'),
-    cpmValue: document.getElementById('cpmValue'),
-    accuracyValue: document.getElementById('accuracyValue'),
-    progressBar: document.getElementById('progressBar'),
-    targetText: document.getElementById('targetText'),
-    typingInput: document.getElementById('typingInput'),
-    practiceHint: document.getElementById('practiceHint'),
-    resultScreen: document.getElementById('resultScreen'),
-    resultEyebrow: document.getElementById('resultEyebrow'),
-    resultTitle: document.getElementById('resultTitle'),
-    resultSummary: document.getElementById('resultSummary'),
-    primaryResultLabel: document.getElementById('primaryResultLabel'),
-    primaryResultValue: document.getElementById('primaryResultValue'),
-    newRecordBadge: document.getElementById('newRecordBadge'),
-    resultCpm: document.getElementById('resultCpm'),
-    resultAccuracy: document.getElementById('resultAccuracy'),
-    resultErrors: document.getElementById('resultErrors'),
-    rankingTabs: document.getElementById('rankingTabs'),
-    rankingBody: document.getElementById('rankingBody'),
-    emptyRanking: document.getElementById('emptyRanking'),
-    toast: document.getElementById('toast')
+/* 줄 확정 직후 짧은 시간 동안은 추가 확정을 막는다.
+   IME 커밋용 Enter와 자동 진행이 겹쳐서 두 줄이 한꺼번에 넘어가는 것을 방지. */
+const SUBMIT_LOCK_MS = 150;
+
+/* =========================================================
+   4. DOM 참조
+   ========================================================= */
+const $ = (id) => document.getElementById(id);
+
+const el = {
+    screens: {
+        select: $('screenSelect'),
+        play: $('screenPlay'),
+        result: $('screenResult')
+    },
+    songGrid: $('songGrid'),
+    modeToggle: $('modeToggle'),
+    modeDesc: $('modeDesc'),
+    addSongBtn: $('addSongBtn'),
+
+    backBtn: $('backBtn'),
+    playCover: $('playCover'),
+    playLabel: $('playLabel'),
+    playTitle: $('playTitle'),
+    playArtist: $('playArtist'),
+
+    linePrev: $('linePrev'),
+    lineCurrent: $('lineCurrent'),
+    lineNext: $('lineNext'),
+    typeInput: $('typeInput'),
+
+    countdown: $('countdown'),
+    countdownNum: $('countdownNum'),
+
+    nowbar: $('nowbar'),
+    barCover: $('barCover'),
+    barTitle: $('barTitle'),
+    barArtist: $('barArtist'),
+    barLine: $('barLine'),
+    barTime: $('barTime'),
+    barCombo: $('barCombo'),
+    barScore: $('barScore'),
+    progressFill: $('progressFill'),
+
+    resultGrade: $('resultGrade'),
+    resultMsg: $('resultMsg'),
+    resultSong: $('resultSong'),
+    bestBadge: $('bestBadge'),
+    statScore: $('statScore'),
+    statAcc: $('statAcc'),
+    statCpm: $('statCpm'),
+    statCombo: $('statCombo'),
+    statLines: $('statLines'),
+    statTime: $('statTime'),
+    prevBest: $('prevBest'),
+    retryBtn: $('retryBtn'),
+    toListBtn: $('toListBtn'),
+
+    modal: $('songModal'),
+    newTitle: $('newTitle'),
+    newArtist: $('newArtist'),
+    newLyrics: $('newLyrics'),
+    lineCounter: $('lineCounter'),
+    modalError: $('modalError'),
+    saveSongBtn: $('saveSongBtn')
 };
 
-function getSelectedText() {
-    return typingTexts.find((item) => item.id === state.selectedTextId) || typingTexts[0];
+/* =========================================================
+   5. 저장소 (localStorage)
+   ---------------------------------------------------------
+   사파리 프라이빗 모드 등에서 예외가 날 수 있어 전부 try/catch.
+   ========================================================= */
+function readStore(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+        return fallback;
+    }
 }
 
-function getFullText(item = getSelectedText()) {
-    return item.segments.join(' ');
+function writeStore(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+        /* 저장 못 해도 게임 자체는 계속 굴러가야 하므로 무시 */
+    }
 }
 
-function getCurrentSegment() {
-    return getSelectedText().segments[state.segmentIndex];
+function getCustomSongs() {
+    const list = readStore(STORE_CUSTOM, []);
+    return Array.isArray(list) ? list : [];
 }
 
-function getTotalLength(item = getSelectedText()) {
-    return item.segments.reduce((total, segment) => total + segment.length, 0);
+function getAllSongs() {
+    return BUILTIN_SONGS.concat(getCustomSongs());
 }
 
+function findSong(id) {
+    return getAllSongs().find((s) => s.id === id) || null;
+}
+
+function bestKey(songId, mode) {
+    return songId + ':' + mode;
+}
+
+function getBest(songId, mode) {
+    const all = readStore(STORE_BEST, {});
+    return all[bestKey(songId, mode)] || null;
+}
+
+function saveBest(songId, mode, record) {
+    const all = readStore(STORE_BEST, {});
+    all[bestKey(songId, mode)] = record;
+    writeStore(STORE_BEST, all);
+}
+
+/* =========================================================
+   6. 화면 전환
+   ========================================================= */
 function showScreen(name) {
-    state.screen = name;
-    elements.screens.forEach((screen) => {
-        const isActive = screen.id === `${name}Screen`;
-        screen.classList.toggle('is-active', isActive);
-        screen.setAttribute('aria-hidden', String(!isActive));
+    Object.keys(el.screens).forEach((key) => {
+        el.screens[key].classList.toggle('is-active', key === name);
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    el.nowbar.classList.toggle('is-on', name === 'play');
 }
 
-function selectMode(mode) {
-    state.mode = mode;
-    const isMeasure = mode === 'measure';
-    elements.selectionEyebrow.textContent = isMeasure ? 'TIME TRIAL · 시간 측정' : '60 SECOND · 타임 어택';
-    elements.selectionDescription.textContent = isMeasure ? '처음부터 끝까지 정확하게 완주해 보세요.' : '60초 동안 최대한 많은 글자를 정확히 입력해 보세요.';
-    renderTextChoices();
-    showScreen('selection');
+/* =========================================================
+   7. 곡 선택 화면
+   ========================================================= */
+const MODE_DESC = {
+    challenge: '제한 시간 안에 완주하세요. 한 줄 넘길 때마다 시간이 조금씩 늘어납니다.',
+    practice: '시간 제한 없이 끝까지. 정확도와 타수만 기록합니다.'
+};
+
+function coverStyle(song) {
+    return 'background-image: linear-gradient(145deg, ' + song.color + ', #101010);';
 }
 
-function renderTextChoices() {
-    elements.textList.innerHTML = typingTexts.map((item, index) => `
-        <button class="text-choice" type="button" data-text-id="${item.id}">
-            <span class="choice-index">${String(index + 1).padStart(2, '0')}</span>
-            <span class="choice-title"><strong>${item.title}</strong><span>${item.category}</span></span>
-            <span class="choice-preview">${getFullText(item)}</span><span class="choice-meta">${getTotalLength(item)}자 · ${item.segments.length}구간</span>
-            <span class="choice-go" aria-hidden="true">→</span>
-        </button>`).join('');
+function renderSongGrid() {
+    const songs = getAllSongs();
+
+    el.songGrid.innerHTML = songs.map((song) => {
+        const best = getBest(song.id, state.mode);
+        const bestText = best
+            ? '<span class="card-best">최고 ' + best.score.toLocaleString() + '점 · ' + best.accuracy + '%</span>'
+            : '<span class="card-best is-empty">기록 없음</span>';
+        const removeBtn = song.custom
+            ? '<button type="button" class="card-remove" data-remove="' + song.id + '" title="삭제">&times;</button>'
+            : '';
+
+        return (
+            '<article class="song-card" data-play="' + song.id + '" tabindex="0" role="button">' +
+            removeBtn +
+            '<div class="cover" style="' + coverStyle(song) + '"><span>' + song.emoji + '</span>' +
+            '<button type="button" class="play-fab" tabindex="-1" aria-hidden="true">&#9654;</button></div>' +
+            '<h3 class="card-title">' + escapeHtml(song.title) + '</h3>' +
+            '<p class="card-artist">' + escapeHtml(song.artist) + '</p>' +
+            '<div class="card-tags">' +
+            '<span class="tag">' + song.difficulty + '</span>' +
+            '<span class="tag">' + song.lines.length + '줄</span>' +
+            '<span class="tag">' + (song.lang === 'ko' ? '한글' : 'ENG') + '</span>' +
+            '</div>' +
+            bestText +
+            '</article>'
+        );
+    }).join('');
 }
 
-function resetGameState() {
-    stopTimer();
-    Object.assign(state, { startedAt: null, typedValue: '', lastCommittedValue: '', correctCount: 0, totalInputCount: 0, errorCount: 0, completedCycles: 0, segmentIndex: 0, awaitingNext: false, isRunning: false, isComposing: false });
-    elements.typingInput.value = '';
-    elements.typingInput.disabled = false;
-    elements.typingInput.classList.remove('input-error');
-    elements.cpmValue.textContent = '0';
-    elements.accuracyValue.textContent = '100';
-    elements.progressBar.style.width = '0%';
+function escapeHtml(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
-function startPractice(textId) {
-    state.selectedTextId = textId;
-    resetGameState();
-    const item = getSelectedText();
-    const isMeasure = state.mode === 'measure';
-    elements.practiceModeBadge.textContent = isMeasure ? '시간 측정' : '60초 타임 어택';
-    updateSegmentMeta();
-    elements.practiceTitle.textContent = item.title;
-    elements.timeLabel.textContent = isMeasure ? '경과 시간' : '남은 시간';
-    elements.timeValue.textContent = isMeasure ? '00:00.0' : '01:00.0';
-    elements.practiceHint.textContent = '현재 구간을 정확히 입력한 뒤 Enter를 누르세요.';
-    elements.typingInput.placeholder = '여기에 첫 글자를 입력하면 시작됩니다.';
-    renderTypingProgress();
-    showScreen('practice');
-    window.setTimeout(() => elements.typingInput.focus(), 80);
+/* =========================================================
+   8. 게임 시작 / 카운트다운
+   ========================================================= */
+function selectSong(songId) {
+    const song = findSong(songId);
+    if (!song) return;
+
+    state.song = song;
+    resetRunStats();
+
+    el.playCover.setAttribute('style', coverStyle(song));
+    el.playCover.innerHTML = '<span>' + song.emoji + '</span>';
+    el.playTitle.textContent = song.title;
+    el.playArtist.textContent = song.artist;
+    el.playLabel.textContent = state.mode === 'challenge' ? '도전 모드' : '연습 모드';
+
+    el.barCover.setAttribute('style', coverStyle(song));
+    el.barCover.innerHTML = '<span>' + song.emoji + '</span>';
+    el.barTitle.textContent = song.title;
+    el.barArtist.textContent = song.artist;
+
+    el.linePrev.textContent = '';
+    el.lineNext.textContent = '';
+    el.lineCurrent.innerHTML = '';
+    el.typeInput.value = '';
+    el.typeInput.disabled = true;
+
+    showScreen('play');
+    updateHud();
+    runCountdown();
 }
 
-function startTimer() {
-    if (state.isRunning) return;
-    state.isRunning = true;
-    state.startedAt = Date.now();
-    elements.typingInput.placeholder = '';
-    state.timerId = window.setInterval(updateLiveStats, 100);
-    updateLiveStats();
+function resetRunStats() {
+    state.lineIndex = 0;
+    state.score = 0;
+    state.combo = 0;
+    state.bestCombo = 0;
+    state.typedChars = 0;
+    state.correctChars = 0;
+    state.perfectLines = 0;
+    state.elapsed = 0;
+    state.composing = false;
+    state.lastSubmitTs = 0;
 }
 
-function stopTimer() {
-    if (state.timerId !== null) { window.clearInterval(state.timerId); state.timerId = null; }
+function runCountdown() {
+    clearTimers();
+    let n = 3;
+    el.countdown.classList.add('is-on');
+    el.countdownNum.textContent = n;
+    el.countdownNum.classList.add('pop');
+
+    state.countdownId = setInterval(() => {
+        n -= 1;
+        if (n === 0) {
+            el.countdownNum.textContent = 'START';
+        } else if (n < 0) {
+            clearInterval(state.countdownId);
+            state.countdownId = null;
+            el.countdown.classList.remove('is-on');
+            beginPlay();
+            return;
+        } else {
+            el.countdownNum.textContent = n;
+        }
+        /* 애니메이션 재시작 */
+        el.countdownNum.classList.remove('pop');
+        void el.countdownNum.offsetWidth;
+        el.countdownNum.classList.add('pop');
+    }, 800);
 }
 
-function getElapsedMs() { return state.startedAt ? Math.max(0, Date.now() - state.startedAt) : 0; }
+function beginPlay() {
+    state.running = true;
+    state.startTs = Date.now();
+    state.deadline = state.startTs + state.song.timeLimit * 1000;
 
-function formatTime(milliseconds) {
-    const safeMs = Math.max(0, milliseconds);
-    const minutes = Math.floor(safeMs / 60000);
-    const seconds = Math.floor((safeMs % 60000) / 1000);
-    const tenths = Math.floor((safeMs % 1000) / 100);
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`;
+    el.typeInput.disabled = false;
+    el.typeInput.value = '';
+    el.typeInput.focus();
+
+    renderLine();
+    updateHud();
+
+    state.timerId = setInterval(tick, 200);
 }
 
-function getAccuracy() {
-    if (state.totalInputCount === 0) return 100;
-    return Math.max(0, ((state.totalInputCount - state.errorCount) / state.totalInputCount) * 100);
+function clearTimers() {
+    if (state.timerId) clearInterval(state.timerId);
+    if (state.countdownId) clearInterval(state.countdownId);
+    state.timerId = null;
+    state.countdownId = null;
 }
 
-function getCpm(elapsedMs = getElapsedMs()) {
-    if (elapsedMs <= 0) return 0;
-    return Math.round((state.correctCount / elapsedMs) * 60000);
+/* =========================================================
+   9. 가사 렌더링
+   ---------------------------------------------------------
+   목표 문장을 글자 단위로 쪼개서 상태별 색을 입힌다.
+     ok       : 맞은 글자
+     bad      : 틀린 글자
+     composing: 한글 조합 중인 글자 (아직 판정하지 않음)
+     cursor   : 지금 입력해야 할 위치
+     extra    : 목표보다 길게 친 글자
+   ========================================================= */
+function currentLine() {
+    return state.song.lines[state.lineIndex] || '';
 }
 
-function updateLiveStats() {
-    if (!state.isRunning) return;
-    const elapsed = getElapsedMs();
-    if (state.mode === 'attack') {
-        const remaining = Math.max(0, ATTACK_DURATION_MS - elapsed);
-        elements.timeValue.textContent = formatTime(remaining);
-        if (remaining <= 0) { finishGame(ATTACK_DURATION_MS); return; }
-    } else {
-        elements.timeValue.textContent = formatTime(elapsed);
+function renderLine() {
+    const target = currentLine();
+    const typed = el.typeInput.value;
+    /* 조합 중이면 마지막 글자는 아직 완성 전이므로 오답 판정을 미룬다 */
+    const judgeLen = state.composing ? Math.max(0, typed.length - 1) : typed.length;
+
+    const frag = document.createDocumentFragment();
+
+    for (let i = 0; i < target.length; i++) {
+        const span = document.createElement('span');
+        span.className = 'ch';
+        span.textContent = target[i];
+
+        if (i < judgeLen) {
+            span.classList.add(typed[i] === target[i] ? 'ok' : 'bad');
+        } else if (i < typed.length) {
+            span.classList.add('composing');
+        } else if (i === typed.length) {
+            span.classList.add('cursor');
+        }
+        if (target[i] === ' ') span.classList.add('is-space');
+        frag.appendChild(span);
     }
-    elements.cpmValue.textContent = String(getCpm(elapsed));
-    elements.accuracyValue.textContent = String(Math.round(getAccuracy()));
-    renderProgressBar();
+
+    /* 목표 문장보다 길게 친 부분 */
+    for (let i = target.length; i < typed.length; i++) {
+        const span = document.createElement('span');
+        span.className = 'ch extra';
+        span.textContent = typed[i] === ' ' ? '·' : typed[i];
+        frag.appendChild(span);
+    }
+
+    el.lineCurrent.innerHTML = '';
+    el.lineCurrent.appendChild(frag);
+
+    el.linePrev.textContent = state.lineIndex > 0 ? state.song.lines[state.lineIndex - 1] : '';
+    el.lineNext.textContent = state.song.lines[state.lineIndex + 1] || '';
 }
 
-function countNewInput(previous, current, target) {
-    if (current.length <= previous.length) return;
-    let prefixLength = 0;
-    const commonLength = Math.min(previous.length, current.length);
-    while (prefixLength < commonLength && previous[prefixLength] === current[prefixLength]) prefixLength += 1;
-    const removedTailLength = previous.length - prefixLength;
-    const addedEnd = Math.max(prefixLength, current.length - removedTailLength);
-    const addedText = current.slice(prefixLength, addedEnd);
-    [...addedText].forEach((character, offset) => {
-        const position = prefixLength + offset;
-        state.totalInputCount += 1;
-        if (character === target[position]) state.correctCount += 1;
-        else state.errorCount += 1;
-    });
+/* =========================================================
+   10. 입력 처리
+   ========================================================= */
+function handleInput() {
+    if (!state.running) return;
+
+    renderLine();
+
+    /* 목표와 완전히 일치하면 자동으로 다음 줄로 넘어간다.
+       단 조합이 끝나지 않았으면 넘기지 않는다.
+       (목표가 '가'인데 '강'을 치는 중이면 중간 상태가 '가'로 일치해버리기 때문) */
+    if (!state.composing && el.typeInput.value === currentLine()) {
+        submitLine();
+    }
 }
 
-function processCommittedInput() {
-    if (state.screen !== 'practice') return;
-    const target = getCurrentSegment();
-    let value = elements.typingInput.value;
-    if (value.length > target.length) { value = value.slice(0, target.length); elements.typingInput.value = value; }
-    if (value.length > 0 && !state.isRunning) startTimer();
-    countNewInput(state.lastCommittedValue, value, target);
-    state.lastCommittedValue = value;
-    state.typedValue = value;
-    state.awaitingNext = value === target;
-    renderTypingProgress();
-    updateLiveStats();
-    const latestIndex = Math.max(0, value.length - 1);
-    if (value && value[latestIndex] !== target[latestIndex]) flashInputError();
-    elements.practiceHint.textContent = state.awaitingNext
-        ? (state.segmentIndex === getSelectedText().segments.length - 1 && state.mode === 'measure' ? 'Enter를 누르면 기록 측정이 완료됩니다.' : '좋아요! Enter를 눌러 다음 구간으로 넘어가세요.')
-        : '현재 구간을 정확히 입력한 뒤 Enter를 누르세요.';
+function handleKeyDown(event) {
+    /* Esc는 document 레벨에서 한 번만 처리한다 (bindEvents 참고) */
+    if (event.key !== 'Enter' || !state.running || event.isComposing) return;
+
+    event.preventDefault();
+
+    /* 빈 입력으로는 줄을 넘기지 않는다.
+       한글 조합을 확정하려고 누른 Enter가 compositionend -> 자동 진행을 일으킨 뒤
+       한 번 더 눌리면서 빈 줄을 그대로 확정해버리는 문제를 막는다. */
+    if (el.typeInput.value.length === 0) return;
+
+    submitLine();
 }
 
-function updateSegmentMeta() {
-    const item = getSelectedText();
-    elements.practiceCategory.textContent = `${item.language} · ${state.segmentIndex + 1}/${item.segments.length} 구간`;
-}
+/* 한 줄 확정 */
+function submitLine() {
+    if (!state.running) return;
 
-function advanceSegment() {
-    if (!state.awaitingNext) {
-        flashInputError();
-        showToast('현재 구간을 정확히 입력해 주세요.');
+    /* 브라우저마다 compositionend / input / keydown 순서가 달라서
+       한 번의 확정 동작이 submitLine 을 두 번 호출하는 경우가 있다. 그때 두 줄이 한꺼번에 넘어간다. */
+    const now = Date.now();
+    if (now - state.lastSubmitTs < SUBMIT_LOCK_MS) return;
+    state.lastSubmitTs = now;
+
+    const target = currentLine();
+    const typed = el.typeInput.value;
+    const len = Math.max(target.length, typed.length);
+
+    let correct = 0;
+    for (let i = 0; i < len; i++) {
+        if (typed[i] === target[i]) correct++;
+    }
+    const wrong = len - correct;
+    const isPerfect = wrong === 0 && typed.length > 0;
+
+    state.typedChars += len;
+    state.correctChars += correct;
+
+    /* 콤보는 오타 없이 넘겼을 때만 이어진다 */
+    if (isPerfect) {
+        state.combo += 1;
+        state.perfectLines += 1;
+        state.bestCombo = Math.max(state.bestCombo, state.combo);
+    } else {
+        state.combo = 0;
+    }
+
+    const multiplier = 1 + Math.min(state.combo, MAX_COMBO_MULTI) * 0.1;
+    let gained = correct * POINT_PER_CHAR - wrong * PENALTY_PER_CHAR + LINE_BONUS;
+    if (isPerfect) gained += PERFECT_BONUS;
+    state.score = Math.max(0, state.score + Math.round(gained * multiplier));
+
+    /* 도전 모드는 잘 칠수록 시간이 늘어난다 */
+    if (state.mode === 'challenge') {
+        state.deadline += TIME_BONUS * 1000;
+        if (isPerfect) state.deadline += TIME_BONUS_PERFECT * 1000;
+    }
+
+    flashLine(isPerfect ? 'flash-good' : 'flash-bad');
+
+    state.lineIndex += 1;
+    el.typeInput.value = '';
+
+    if (state.lineIndex >= state.song.lines.length) {
+        finishGame(true);
         return;
     }
 
-    const item = getSelectedText();
-    const isLastSegment = state.segmentIndex === item.segments.length - 1;
-    if (isLastSegment && state.mode === 'measure') {
-        finishGame(getElapsedMs());
+    renderLine();
+    updateHud();
+}
+
+function flashLine(className) {
+    el.lineCurrent.classList.add(className);
+    setTimeout(() => el.lineCurrent.classList.remove(className), 260);
+}
+
+/* =========================================================
+   11. 타이머 / HUD
+   ========================================================= */
+function tick() {
+    if (!state.running) return;
+
+    const now = Date.now();
+    state.elapsed = (now - state.startTs) / 1000;
+
+    if (state.mode === 'challenge' && now >= state.deadline) {
+        finishGame(false);
         return;
     }
+    updateHud();
+}
 
-    if (isLastSegment) {
-        state.completedCycles += 1;
-        state.segmentIndex = 0;
-        showToast(`${state.completedCycles}회 완주! 처음 구간부터 이어집니다.`);
+function formatTime(sec) {
+    const s = Math.max(0, Math.round(sec));
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function updateHud() {
+    if (!state.song) return;
+
+    const total = state.song.lines.length;
+    const done = Math.min(state.lineIndex, total);
+
+    el.barLine.textContent = done + ' / ' + total;
+    el.progressFill.style.width = (total ? (done / total) * 100 : 0) + '%';
+    el.barScore.textContent = state.score.toLocaleString();
+
+    el.barCombo.textContent = 'COMBO ' + state.combo;
+    el.barCombo.classList.toggle('is-hot', state.combo >= 3);
+
+    if (state.mode === 'challenge') {
+        const left = Math.max(0, (state.deadline - Date.now()) / 1000);
+        el.barTime.textContent = formatTime(left);
+        el.barTime.classList.toggle('is-urgent', left <= 10);
     } else {
-        state.segmentIndex += 1;
+        el.barTime.textContent = formatTime(state.elapsed);
+        el.barTime.classList.remove('is-urgent');
     }
 
     state.typedValue = '';
@@ -250,171 +656,252 @@ function advanceSegment() {
     renderTypingProgress();
 }
 
-function renderProgressBar() {
-    const item = getSelectedText();
-    const completedLength = item.segments.slice(0, state.segmentIndex).reduce((total, segment) => total + segment.length, 0);
-    const progress = state.mode === 'attack' ? Math.min(100, (getElapsedMs() / ATTACK_DURATION_MS) * 100) : ((completedLength + state.typedValue.length) / getTotalLength(item)) * 100;
-    elements.progressBar.style.width = `${progress}%`;
+/* =========================================================
+   12. 종료 / 결과
+   ========================================================= */
+function quitToList() {
+    state.running = false;
+    clearTimers();
+    el.typeInput.value = '';
+    el.typeInput.disabled = true;
+    el.countdown.classList.remove('is-on');
+    renderSongGrid();
+    showScreen('select');
 }
 
-function renderTypingProgress() {
-    const target = getCurrentSegment();
-    const value = state.typedValue;
-    elements.targetText.innerHTML = [...target].map((character, index) => {
-        let className = 'target-char';
-        if (index < value.length) className += value[index] === character ? ' correct' : ' wrong';
-        else if (index === value.length) className += ' current';
-        const safeCharacter = character === ' ' ? '&nbsp;' : escapeHtml(character);
-        return `<span class="${className}">${safeCharacter}</span>`;
-    }).join('');
-    renderProgressBar();
+function calcAccuracy() {
+    if (state.typedChars === 0) return 0;
+    return Math.round((state.correctChars / state.typedChars) * 1000) / 10;
 }
 
-function escapeHtml(value) {
-    const span = document.createElement('span');
-    span.textContent = value;
-    return span.innerHTML;
+function calcCpm() {
+    const minutes = state.elapsed / 60;
+    if (minutes <= 0) return 0;
+    return Math.round(state.correctChars / minutes);
 }
 
-function flashInputError() {
-    elements.typingInput.classList.remove('input-error');
-    void elements.typingInput.offsetWidth;
-    elements.typingInput.classList.add('input-error');
-    window.setTimeout(() => elements.typingInput.classList.remove('input-error'), 220);
+function calcGrade(accuracy, completed) {
+    const order = ['S', 'A', 'B', 'C', 'D'];
+    let idx = accuracy >= 98 ? 0
+        : accuracy >= 94 ? 1
+            : accuracy >= 88 ? 2
+                : accuracy >= 78 ? 3 : 4;
+    /* 완주하지 못했으면 한 등급 강등 */
+    if (!completed) idx = Math.min(idx + 1, order.length - 1);
+    return order[idx];
 }
 
-function finishGame(forcedElapsedMs) {
-    if (!state.isRunning) return;
-    const elapsedMs = forcedElapsedMs ?? getElapsedMs();
-    state.isRunning = false;
-    stopTimer();
-    elements.typingInput.disabled = true;
-    const result = { timeMs: elapsedMs, cpm: getCpm(elapsedMs), accuracy: Number(getAccuracy().toFixed(1)), errors: state.errorCount, correctCount: state.correctCount, playedAt: new Date().toISOString() };
-    const isNewBest = state.mode === 'measure' ? saveRanking(result) : false;
-    renderResult(result, isNewBest);
+const GRADE_MSG = {
+    S: '완벽합니다. 이 노래는 이제 당신 겁니다.',
+    A: '거의 다 왔어요. 오타 몇 개만 더 줄이면 S입니다.',
+    B: '안정적인 연주였어요. 조금만 더 정확하게!',
+    C: '리듬은 탔는데 손이 살짝 미끄러졌네요.',
+    D: '천천히 정확하게부터 다시 해봐요.'
+};
+
+function finishGame(completed) {
+    state.running = false;
+    clearTimers();
+    el.typeInput.disabled = true;
+    el.typeInput.value = '';
+
+    /* 마지막 줄을 넘기자마자 끝나는 경우 tick이 돌지 않았을 수 있으므로 여기서 다시 계산 */
+    state.elapsed = (Date.now() - state.startTs) / 1000;
+
+    const accuracy = calcAccuracy();
+    const cpm = calcCpm();
+    const grade = calcGrade(accuracy, completed);
+    const total = state.song.lines.length;
+    const done = Math.min(state.lineIndex, total);
+
+    el.resultGrade.textContent = grade;
+    el.resultGrade.setAttribute('data-grade', grade);
+    el.resultMsg.textContent = completed
+        ? GRADE_MSG[grade]
+        : '시간이 다 됐어요! ' + GRADE_MSG[grade];
+    el.resultSong.textContent = state.song.title + ' · ' + state.song.artist +
+        ' · ' + (state.mode === 'challenge' ? '도전 모드' : '연습 모드');
+
+    el.statScore.textContent = state.score.toLocaleString();
+    el.statAcc.textContent = accuracy + '%';
+    el.statCpm.textContent = cpm.toLocaleString();
+    el.statCombo.textContent = state.bestCombo;
+    el.statLines.textContent = done + ' / ' + total;
+    el.statTime.textContent = Math.round(state.elapsed) + '초';
+
+    /* 최고 기록 갱신 */
+    const prev = getBest(state.song.id, state.mode);
+    const isNewBest = !prev || state.score > prev.score;
+    if (isNewBest) {
+        saveBest(state.song.id, state.mode, { score: state.score, accuracy: accuracy, cpm: cpm });
+    }
+    el.bestBadge.hidden = !isNewBest;
+    el.prevBest.textContent = prev
+        ? '이전 최고 기록 ' + prev.score.toLocaleString() + '점 · 정확도 ' + prev.accuracy + '%'
+        : '';
+
+    renderSongGrid();
     showScreen('result');
-    window.setTimeout(() => elements.resultScreen.focus(), 80);
 }
 
-function renderResult(result, isNewBest) {
-    const isMeasure = state.mode === 'measure';
-    elements.resultEyebrow.textContent = isMeasure ? 'TIME TRIAL COMPLETE' : 'TIME ATTACK COMPLETE';
-    elements.resultTitle.textContent = isMeasure ? '문장을 완주했어요!' : '60초 도전 완료!';
-    elements.resultSummary.textContent = isMeasure ? `${getSelectedText().title} 기록이 이 기기에 저장되었습니다.` : `${state.completedCycles}회 완주하고 총 ${result.correctCount}타를 정확히 입력했습니다.`;
-    elements.primaryResultLabel.textContent = isMeasure ? '완주 시간' : '정확하게 입력한 글자';
-    elements.primaryResultValue.textContent = isMeasure ? formatTime(result.timeMs) : `${result.correctCount}타`;
-    elements.newRecordBadge.hidden = !isNewBest;
-    elements.resultCpm.textContent = String(result.cpm);
-    elements.resultAccuracy.textContent = result.accuracy.toFixed(1);
-    elements.resultErrors.textContent = String(result.errors);
+/* =========================================================
+   13. 내 노래 추가 모달
+   ========================================================= */
+function openModal() {
+    el.modal.hidden = false;
+    el.modalError.hidden = true;
+    el.newTitle.value = '';
+    el.newArtist.value = '';
+    el.newLyrics.value = '';
+    el.lineCounter.textContent = '0줄';
+    el.newTitle.focus();
 }
 
-function loadRankings() {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    } catch (error) { return {}; }
+function closeModal() {
+    el.modal.hidden = true;
 }
 
-function writeRankings(rankings) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rankings)); return true; }
-    catch (error) { showToast('기록을 저장할 수 없는 브라우저 환경입니다.'); return false; }
+function parseLyrics(text) {
+    return text
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
 }
 
-function saveRanking(result) {
-    const rankings = loadRankings();
-    const textId = state.selectedTextId;
-    const previousBest = Array.isArray(rankings[textId]) && rankings[textId].length ? Math.min(...rankings[textId].map((record) => record.timeMs)) : Infinity;
-    const safeResult = { timeMs: Math.max(1, Math.round(result.timeMs)), cpm: Math.max(0, Math.round(result.cpm)), accuracy: Math.min(100, Math.max(0, result.accuracy)), playedAt: result.playedAt };
-    const records = Array.isArray(rankings[textId]) ? rankings[textId] : [];
-    rankings[textId] = [...records, safeResult].filter(isValidRecord).sort((a, b) => a.timeMs - b.timeMs).slice(0, 10);
-    const saved = writeRankings(rankings);
-    return saved && safeResult.timeMs < previousBest;
+function saveNewSong() {
+    const title = el.newTitle.value.trim();
+    const artist = el.newArtist.value.trim() || '알 수 없는 아티스트';
+    const lines = parseLyrics(el.newLyrics.value);
+
+    if (!title) return showModalError('노래 제목을 입력해주세요.');
+    if (lines.length < 2) return showModalError('가사를 두 줄 이상 입력해주세요.');
+
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    /* 한글이 하나라도 있으면 한글 곡으로 분류 */
+    const isKorean = /[가-힣]/.test(lines.join(''));
+    const avgLen = lines.reduce((sum, l) => sum + l.length, 0) / lines.length;
+
+    const song = {
+        id: 'custom-' + Date.now(),
+        title: title,
+        artist: artist,
+        emoji: pick(CUSTOM_EMOJIS),
+        color: pick(CUSTOM_COLORS),
+        lang: isKorean ? 'ko' : 'en',
+        difficulty: avgLen >= 26 ? '어려움' : avgLen >= 16 ? '보통' : '쉬움',
+        /* 줄당 넉넉히 잡되 최소 30초 */
+        timeLimit: Math.max(30, Math.round(lines.length * (isKorean ? 7 : 9))),
+        lines: lines,
+        custom: true
+    };
+
+    const list = getCustomSongs();
+    list.push(song);
+    writeStore(STORE_CUSTOM, list);
+
+    closeModal();
+    renderSongGrid();
 }
 
-function isValidRecord(record) {
-    return record && Number.isFinite(record.timeMs) && record.timeMs > 0 && Number.isFinite(record.cpm) && Number.isFinite(record.accuracy) && typeof record.playedAt === 'string';
+function showModalError(message) {
+    el.modalError.textContent = message;
+    el.modalError.hidden = false;
 }
 
-function openRankings() {
-    renderRankingTabs();
-    renderRankings(state.selectedRankingId);
-    showScreen('ranking');
+function removeCustomSong(songId) {
+    const song = findSong(songId);
+    if (!song) return;
+    if (!window.confirm('"' + song.title + '"을(를) 플레이리스트에서 지울까요?')) return;
+
+    writeStore(STORE_CUSTOM, getCustomSongs().filter((s) => s.id !== songId));
+    renderSongGrid();
 }
 
-function renderRankingTabs() {
-    elements.rankingTabs.innerHTML = typingTexts.map((item) => `<button class="ranking-tab" type="button" role="tab" data-ranking-id="${item.id}" aria-selected="${String(item.id === state.selectedRankingId)}">${item.title}</button>`).join('');
+/* =========================================================
+   14. 이벤트 연결
+   ========================================================= */
+function bindEvents() {
+    /* 모드 선택 */
+    el.modeToggle.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-mode]');
+        if (!btn) return;
+        state.mode = btn.dataset.mode;
+        el.modeToggle.querySelectorAll('.seg').forEach((b) => {
+            b.classList.toggle('is-on', b === btn);
+        });
+        el.modeDesc.textContent = MODE_DESC[state.mode];
+        renderSongGrid();
+    });
+
+    /* 곡 카드 (클릭 + 키보드) */
+    el.songGrid.addEventListener('click', (event) => {
+        const removeBtn = event.target.closest('[data-remove]');
+        if (removeBtn) {
+            event.stopPropagation();
+            removeCustomSong(removeBtn.dataset.remove);
+            return;
+        }
+        const card = event.target.closest('[data-play]');
+        if (card) selectSong(card.dataset.play);
+    });
+
+    el.songGrid.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const card = event.target.closest('[data-play]');
+        if (!card) return;
+        event.preventDefault();
+        selectSong(card.dataset.play);
+    });
+
+    /* 타이핑 입력 */
+    el.typeInput.addEventListener('input', handleInput);
+    el.typeInput.addEventListener('keydown', handleKeyDown);
+    el.typeInput.addEventListener('compositionstart', () => {
+        state.composing = true;
+    });
+    el.typeInput.addEventListener('compositionend', () => {
+        state.composing = false;
+        handleInput();
+    });
+
+    /* 플레이 화면 아무 데나 누르면 다시 입력창으로 포커스 */
+    el.screens.play.addEventListener('mouseup', () => {
+        if (state.running && !window.getSelection().toString()) el.typeInput.focus();
+    });
+
+    /* 화면 이동 버튼 */
+    el.backBtn.addEventListener('click', quitToList);
+    el.toListBtn.addEventListener('click', quitToList);
+    el.retryBtn.addEventListener('click', () => {
+        if (state.song) selectSong(state.song.id);
+    });
+
+    /* 모달 */
+    el.addSongBtn.addEventListener('click', openModal);
+    el.saveSongBtn.addEventListener('click', saveNewSong);
+    el.modal.addEventListener('click', (event) => {
+        if (event.target.closest('[data-close]')) closeModal();
+    });
+    el.newLyrics.addEventListener('input', () => {
+        el.lineCounter.textContent = parseLyrics(el.newLyrics.value).length + '줄';
+    });
+
+    /* 전역 Esc */
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        if (!el.modal.hidden) closeModal();
+        else if (el.screens.play.classList.contains('is-active')) quitToList();
+    });
 }
 
-function renderRankings(textId) {
-    state.selectedRankingId = textId;
-    const rankings = loadRankings();
-    const records = Array.isArray(rankings[textId]) ? rankings[textId].filter(isValidRecord) : [];
-    elements.rankingTabs.querySelectorAll('.ranking-tab').forEach((tab) => tab.setAttribute('aria-selected', String(tab.dataset.rankingId === textId)));
-    elements.rankingBody.innerHTML = records.map((record, index) => `<tr><td><span class="rank-number ${index < 3 ? 'top' : ''}">${String(index + 1).padStart(2, '0')}</span></td><td>${formatTime(record.timeMs)}</td><td>${record.cpm} CPM</td><td>${Number(record.accuracy).toFixed(1)}%</td><td>${formatDate(record.playedAt)}</td></tr>`).join('');
-    elements.emptyRanking.hidden = records.length > 0;
+/* =========================================================
+   15. 초기화
+   ========================================================= */
+function init() {
+    el.modeDesc.textContent = MODE_DESC[state.mode];
+    renderSongGrid();
+    bindEvents();
+    showScreen('select');
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return '-';
-    return new Intl.DateTimeFormat('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).format(date);
-}
-
-function clearRankings() {
-    const hasRecords = Object.values(loadRankings()).some((records) => Array.isArray(records) && records.length);
-    if (!hasRecords) { showToast('초기화할 기록이 없습니다.'); return; }
-    if (!window.confirm('저장된 시간 측정 기록을 모두 삭제할까요?')) return;
-    try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* 게임은 계속 이용할 수 있다. */ }
-    renderRankings(state.selectedRankingId);
-    showToast('모든 기록을 초기화했습니다.');
-}
-
-let toastTimer = null;
-function showToast(message) {
-    elements.toast.textContent = message;
-    elements.toast.classList.add('is-visible');
-    window.clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => elements.toast.classList.remove('is-visible'), 2200);
-}
-
-function leavePractice(destination) {
-    if (state.isRunning && !window.confirm('진행 중인 연습을 종료하고 나갈까요?')) return;
-    resetGameState();
-    showScreen(destination);
-}
-
-function goHome() {
-    if (state.screen === 'practice') { leavePractice('home'); return; }
-    resetGameState();
-    showScreen('home');
-}
-
-document.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => selectMode(button.dataset.mode)));
-document.querySelectorAll('[data-back]').forEach((button) => button.addEventListener('click', () => state.screen === 'practice' ? leavePractice(button.dataset.back) : showScreen(button.dataset.back)));
-document.getElementById('brandButton').addEventListener('click', goHome);
-document.getElementById('rankingButton').addEventListener('click', openRankings);
-document.getElementById('restartButton').addEventListener('click', () => startPractice(state.selectedTextId));
-document.getElementById('retryButton').addEventListener('click', () => startPractice(state.selectedTextId));
-document.getElementById('chooseAnotherButton').addEventListener('click', () => showScreen('selection'));
-document.getElementById('clearRankingsButton').addEventListener('click', clearRankings);
-elements.textList.addEventListener('click', (event) => { const choice = event.target.closest('[data-text-id]'); if (choice) startPractice(choice.dataset.textId); });
-elements.rankingTabs.addEventListener('click', (event) => { const tab = event.target.closest('[data-ranking-id]'); if (tab) renderRankings(tab.dataset.rankingId); });
-
-elements.typingInput.addEventListener('compositionstart', () => { state.isComposing = true; });
-elements.typingInput.addEventListener('compositionend', () => { state.isComposing = false; processCommittedInput(); });
-elements.typingInput.addEventListener('input', () => {
-    if (!state.isComposing) processCommittedInput();
-    else { state.typedValue = elements.typingInput.value.slice(0, getCurrentSegment().length); renderTypingProgress(); }
-});
-elements.typingInput.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' || state.isComposing) return;
-    event.preventDefault();
-    advanceSegment();
-});
-elements.typingInput.addEventListener('paste', (event) => { event.preventDefault(); showToast('붙여넣기 대신 직접 입력해 주세요.'); });
-elements.typingInput.addEventListener('drop', (event) => event.preventDefault());
-document.addEventListener('visibilitychange', () => { if (!document.hidden && state.isRunning) updateLiveStats(); });
-window.addEventListener('beforeunload', (event) => { if (state.isRunning) { event.preventDefault(); event.returnValue = ''; } });
-
-showScreen('home');
+init();

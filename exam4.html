@@ -1,88 +1,180 @@
+<!--
+    1. 아래 게임의 문제점을 발견하고,
+   개선점을 제시하세요. 정답은 없습니다.
+    2. 디자인을 개선해보세요.
+    3. css, javascript 파일을 외부로 빼서 따로 관리하도록 변경해주시고
+    4. repository를 새로 만들어서
+    5. github 페이지에 배포해보세요 (index.html이 아니면 파일명까지 다 적어줘야 경로가 됩니다)
+ -->
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="한글과 영어 문장을 연습하고 타자 기록을 확인하는 브라우저 타자연습 프로그램">
-    <title>타닥 — 타자연습</title>
-    <link rel="stylesheet" href="exam4.css">
+    <title>LyricType - 가사 타이핑 게임</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="exam4.css" />
 </head>
+
 <body>
-    <div class="app-shell">
-        <header class="app-header">
-            <button class="brand" id="brandButton" type="button" aria-label="메인 화면으로 이동">
-                <span class="brand-mark" aria-hidden="true">T</span><span>타닥</span>
-            </button>
-            <div class="header-status"><span class="status-dot" aria-hidden="true"></span>브라우저에 기록 저장</div>
+    <div class="app">
+
+        <!-- ===== 상단 바 ===== -->
+        <header class="topbar">
+            <div class="brand">
+                <span class="brand-logo" aria-hidden="true"></span>
+                <span class="brand-name">LyricType</span>
+            </div>
+            <p class="brand-tag">가사를 문장 단위로 타이핑하는 게임</p>
         </header>
 
-        <main>
-            <section class="screen home-screen is-active" id="homeScreen" aria-labelledby="homeTitle">
-                <div class="home-heading">
-                    <p class="eyebrow">TYPING STUDIO</p>
-                    <h1 id="homeTitle">오늘의 문장을<br><span>내 속도로.</span></h1>
-                    <p>짧게 집중하고, 정확하게 입력하고, 어제의 기록을 넘어보세요.</p>
+        <main class="content">
+
+            <!-- ===== 화면 1 : 곡 선택 ===== -->
+            <section id="screenSelect" class="screen is-active">
+                <div class="hero">
+                    <p class="eyebrow">PLAYLIST</p>
+                    <h1>무엇을 타이핑할까요?</h1>
+                    <p class="hero-sub">노래를 고르고, 흘러가는 가사를 한 줄씩 따라 쳐보세요.</p>
                 </div>
-                <div class="mode-grid" aria-label="연습 모드 선택">
-                    <button class="mode-card mode-card--measure" type="button" data-mode="measure">
-                        <span class="mode-number">01</span>
-                        <span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 1.5M9 2h6M12 5V2"></path></svg></span>
-                        <span class="mode-name">시간 측정</span>
-                        <span class="mode-description">문장 전체를 완성하는 시간을 측정합니다.</span>
-                        <span class="mode-arrow" aria-hidden="true">→</span>
-                    </button>
-                    <button class="mode-card mode-card--attack" type="button" data-mode="attack">
-                        <span class="mode-number">02</span>
-                        <span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13H11l-1 9L19.5 11H13z"></path></svg></span>
-                        <span class="mode-name">타임 어택</span>
-                        <span class="mode-description">60초 동안 정확히 몇 타를 치는지 도전합니다.</span>
-                        <span class="mode-arrow" aria-hidden="true">→</span>
-                    </button>
-                    <button class="mode-card mode-card--ranking" id="rankingButton" type="button">
-                        <span class="mode-number">03</span>
-                        <span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 21V10h8v11M5 21h14M9 6a3 3 0 1 1 6 0c0 1.2-.7 2.2-1.7 2.7L12 11l-1.3-2.3A3 3 0 0 1 9 6Z"></path></svg></span>
-                        <span class="mode-name">랭킹</span>
-                        <span class="mode-description">문장별 최고 기록과 성장 과정을 확인합니다.</span>
-                        <span class="mode-arrow" aria-hidden="true">→</span>
-                    </button>
+
+                <div class="mode-row">
+                    <div class="segmented" id="modeToggle" role="group" aria-label="게임 모드">
+                        <button type="button" class="seg is-on" data-mode="challenge">도전 모드</button>
+                        <button type="button" class="seg" data-mode="practice">연습 모드</button>
+                    </div>
+                    <p class="mode-desc" id="modeDesc"></p>
                 </div>
-                <div class="home-tip"><span class="keycap">TIP</span><p>첫 글자를 입력하는 순간 측정이 시작됩니다.</p></div>
+
+                <div class="section-head">
+                    <h2>수록곡</h2>
+                    <button type="button" class="ghost-btn" id="addSongBtn">+ 내 노래 추가</button>
+                </div>
+
+                <div class="card-grid" id="songGrid"></div>
             </section>
 
-            <section class="screen selection-screen" id="selectionScreen" aria-labelledby="selectionTitle">
-                <button class="back-button" type="button" data-back="home">← <span>메인으로</span></button>
-                <div class="section-heading">
-                    <p class="eyebrow" id="selectionEyebrow">시간 측정</p>
-                    <h2 id="selectionTitle">어떤 문장으로<br>연습할까요?</h2>
-                    <p id="selectionDescription">문장을 골라 기록 측정을 시작하세요.</p>
-                </div>
-                <div class="text-list" id="textList"></div>
-            </section>
-
-            <section class="screen practice-screen" id="practiceScreen" aria-labelledby="practiceTitle">
-                <div class="practice-topbar">
-                    <button class="back-button" type="button" data-back="selection">← <span>문장 선택</span></button>
-                    <span class="mode-badge" id="practiceModeBadge">시간 측정</span>
-                </div>
-                <div class="practice-heading">
-                    <div><p class="eyebrow" id="practiceCategory">KOREAN · 0자</p><h2 id="practiceTitle">문장 제목</h2></div>
-                    <div class="live-stats" aria-label="실시간 기록">
-                        <div class="stat stat--primary"><span id="timeLabel">경과 시간</span><strong id="timeValue">00:00.0</strong></div>
-                        <div class="stat"><span>타수</span><strong><span id="cpmValue">0</span><small> CPM</small></strong></div>
-                        <div class="stat"><span>정확도</span><strong><span id="accuracyValue">100</span><small>%</small></strong></div>
+            <!-- ===== 화면 2 : 플레이 ===== -->
+            <section id="screenPlay" class="screen">
+                <div class="play-head">
+                    <button type="button" class="icon-btn" id="backBtn" aria-label="곡 목록으로">&#8592;</button>
+                    <div class="cover cover-sm" id="playCover"></div>
+                    <div class="play-meta">
+                        <p class="play-label" id="playLabel">재생 중</p>
+                        <h2 id="playTitle"></h2>
+                        <p class="play-artist" id="playArtist"></p>
                     </div>
                 </div>
-                <div class="progress-track" aria-hidden="true"><span id="progressBar"></span></div>
-                <div class="typing-paper">
-                    <div class="target-text" id="targetText" aria-label="입력할 원문"></div>
-                    <label class="sr-only" for="typingInput">위 문장을 입력하세요</label>
-                    <textarea id="typingInput" rows="4" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="여기에 첫 글자를 입력하면 시작됩니다."></textarea>
+
+                <div class="lyric-view">
+                    <p class="lyric-line is-prev" id="linePrev"></p>
+                    <div class="lyric-line is-current" id="lineCurrent"></div>
+                    <p class="lyric-line is-next" id="lineNext"></p>
                 </div>
-                <div class="practice-actions">
-                    <p><span class="mini-dot"></span><span id="practiceHint">원문과 똑같이 입력해 주세요.</span></p>
-                    <button class="text-button" id="restartButton" type="button">↻ 다시 시작</button>
+
+                <div class="type-area">
+                    <input type="text" id="typeInput" placeholder="여기에 위 가사를 입력하세요" autocomplete="off"
+                        autocapitalize="off" autocorrect="off" spellcheck="false" disabled />
+                    <p class="type-hint">
+                        <kbd>Enter</kbd> 다음 줄로 넘기기 · <kbd>Esc</kbd> 그만두기 · 정확히 다 치면 자동으로 넘어갑니다
+                    </p>
+                </div>
+
+                <div class="countdown" id="countdown"><span id="countdownNum">3</span></div>
+            </section>
+
+            <!-- ===== 화면 3 : 결과 ===== -->
+            <section id="screenResult" class="screen">
+                <div class="result-card">
+                    <p class="eyebrow">RESULT</p>
+                    <div class="grade" id="resultGrade">S</div>
+                    <p class="result-msg" id="resultMsg"></p>
+                    <p class="result-song" id="resultSong"></p>
+                    <p class="best-badge" id="bestBadge" hidden>🏆 신기록!</p>
+
+                    <ul class="result-stats">
+                        <li><span class="stat-label">점수</span><strong id="statScore">0</strong></li>
+                        <li><span class="stat-label">정확도</span><strong id="statAcc">0%</strong></li>
+                        <li><span class="stat-label">타수 (분당)</span><strong id="statCpm">0</strong></li>
+                        <li><span class="stat-label">최고 콤보</span><strong id="statCombo">0</strong></li>
+                        <li><span class="stat-label">완주</span><strong id="statLines">0 / 0</strong></li>
+                        <li><span class="stat-label">걸린 시간</span><strong id="statTime">0초</strong></li>
+                    </ul>
+
+                    <p class="prev-best" id="prevBest"></p>
+
+                    <div class="result-actions">
+                        <button type="button" class="pill-btn" id="retryBtn">다시 하기</button>
+                        <button type="button" class="ghost-btn" id="toListBtn">다른 곡 고르기</button>
+                    </div>
                 </div>
             </section>
+
+        </main>
+
+        <!-- ===== 하단 재생 바 ===== -->
+        <footer class="nowbar" id="nowbar">
+            <div class="nowbar-left">
+                <div class="cover cover-xs" id="barCover"></div>
+                <div class="nowbar-meta">
+                    <strong id="barTitle"></strong>
+                    <span id="barArtist"></span>
+                </div>
+            </div>
+
+            <div class="nowbar-center">
+                <div class="bar-row">
+                    <span class="bar-time" id="barLine">0 / 0</span>
+                    <div class="progress" id="progressTrack">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span class="bar-time" id="barTime">0:00</span>
+                </div>
+            </div>
+
+            <div class="nowbar-right">
+                <span class="chip chip-combo" id="barCombo">COMBO 0</span>
+                <span class="chip chip-score" id="barScore">0</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ===== 노래 추가 모달 ===== -->
+    <div class="modal" id="songModal" hidden>
+        <div class="modal-backdrop" data-close="1"></div>
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <h3 id="modalTitle">내 노래 추가</h3>
+            <p class="modal-sub">좋아하는 노래의 가사를 붙여넣으면 바로 플레이할 수 있습니다. 한 줄이 한 문제가 됩니다.</p>
+
+            <label class="field">
+                <span>제목</span>
+                <input type="text" id="newTitle" maxlength="40" placeholder="노래 제목">
+            </label>
+
+            <label class="field">
+                <span>아티스트</span>
+                <input type="text" id="newArtist" maxlength="40" placeholder="아티스트 이름">
+            </label>
+
+            <label class="field">
+                <span>가사 <em id="lineCounter">0줄</em></span>
+                <textarea id="newLyrics" rows="8" placeholder="가사를 줄바꿈으로 구분해 붙여넣으세요"></textarea>
+            </label>
+
+            <p class="modal-error" id="modalError" hidden></p>
+
+            <div class="modal-actions">
+                <button type="button" class="ghost-btn" data-close="1">취소</button>
+                <button type="button" class="pill-btn" id="saveSongBtn">플레이리스트에 담기</button>
+            </div>
+        </div>
+    </div>
 
             <section class="screen result-screen" id="resultScreen" aria-labelledby="resultTitle" tabindex="-1">
                 <div class="result-card">
@@ -128,4 +220,5 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="exam4.js"></script>
 </body>
+
 </html>
