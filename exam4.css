@@ -1,166 +1,1130 @@
-/* ===== 화면 전체 배경 ===== */
-html {
-    min-height: 100%;
-    background: linear-gradient(160deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
-    background-attachment: fixed;
+/* =========================================================
+   LyricType - Spotify 감성 테마
+   메인 컬러: Spotify Green(#1db954 / #1ed760) + Black(#121212)
+   ========================================================= */
+
+/* ===== 디자인 토큰 ===== */
+:root {
+    --green: #1db954;
+    --green-bright: #1ed760;
+    --green-dim: rgba(29, 185, 84, 0.16);
+
+    --bg: #121212;
+    --bg-deep: #000000;
+    --bg-elev: #181818;
+    --bg-hover: #282828;
+    --bg-line: #2a2a2a;
+
+    --text: #ffffff;
+    --text-sub: #b3b3b3;
+    --text-dim: #7a7a7a;
+
+    --red: #f0526d;
+    --yellow: #f0c33d;
+
+    --radius: 10px;
+    --radius-lg: 16px;
+    --nowbar-h: 84px;
+
+    --font: "Montserrat", "Pretendard", "Segoe UI", "맑은 고딕", Malgun Gothic, sans-serif;
+    color-scheme: dark;
 }
 
-/* ===== 게임판 (가운데 카드) ===== */
-body {
+/* ===== 리셋 ===== */
+* {
     box-sizing: border-box;
-    max-width: 460px;
-    margin: 56px auto;
-    padding: 32px 28px 34px;
-
-    text-align: center;
-    font-family: "Segoe UI", "맑은 고딕", Malgun Gothic, sans-serif;
-    color: #1f2937;
-
-    background: #ffffff;
-    border-radius: 20px;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
 }
 
-h1 {
+html,
+body {
+    height: 100%;
+}
+
+body {
     margin: 0;
-    font-size: 26px;
-    letter-spacing: -0.5px;
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--bg-deep);
+    -webkit-font-smoothing: antialiased;
 }
 
-.guide {
-    margin: 8px 0 0;
+h1,
+h2,
+h3 {
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+p {
+    margin: 0;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+kbd {
+    padding: 1px 6px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-sub);
+    background: #2b2b2b;
+    border: 1px solid #3a3a3a;
+    border-radius: 5px;
+}
+
+/* ===== 앱 셸 ===== */
+.app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding-bottom: var(--nowbar-h);
+    background: linear-gradient(180deg, #1c2f22 0%, var(--bg) 340px);
+}
+
+/* ----- 상단 바 ----- */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    padding: 14px 32px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 초록 원 + 음파 느낌의 로고 */
+.brand-logo {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    background: var(--green);
+    border-radius: 50%;
+}
+
+.brand-logo::before,
+.brand-logo::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--bg-deep);
+    border-radius: 50%;
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+    rotate: -45deg;
+}
+
+.brand-logo::before {
+    width: 10px;
+    height: 10px;
+}
+
+.brand-logo::after {
+    width: 18px;
+    height: 18px;
+}
+
+.brand-name {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+.brand-tag {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+/* ----- 본문 ----- */
+.content {
+    flex: 1;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 32px;
+}
+
+.screen {
+    display: none;
+}
+
+.screen.is-active {
+    display: block;
+    animation: fadeUp 0.35s ease;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* =========================================================
+   화면 1 : 곡 선택
+   ========================================================= */
+.hero {
+    margin-bottom: 28px;
+}
+
+.eyebrow {
+    margin-bottom: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--green-bright);
+}
+
+.hero h1 {
+    font-size: 44px;
+    font-weight: 800;
+}
+
+.hero-sub {
+    margin-top: 10px;
     font-size: 14px;
-    color: #6b7280;
+    color: var(--text-sub);
 }
 
-/* ===== 입력해야 할 문자 / 단어 ===== */
-#targetChar {
+/* 모드 선택 */
+.mode-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 34px;
+}
+
+.segmented {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-elev);
+    border: 1px solid var(--bg-line);
+    border-radius: 500px;
+}
+
+.seg {
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-sub);
+    background: transparent;
+    border: none;
+    border-radius: 500px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.seg:hover {
+    color: var(--text);
+}
+
+.seg.is-on {
+    color: var(--bg-deep);
+    background: var(--green-bright);
+}
+
+.mode-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+/* 섹션 헤더 */
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.section-head h2 {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+/* 곡 카드 그리드 */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+    gap: 18px;
+}
+
+.song-card {
+    position: relative;
+    padding: 16px;
+    background: var(--bg-elev);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.25s;
+}
+
+.song-card:hover,
+.song-card:focus-visible {
+    background: var(--bg-hover);
+    outline: none;
+}
+
+.song-card:focus-visible {
+    box-shadow: 0 0 0 2px var(--green-bright);
+}
+
+/* 앨범 커버 */
+.cover {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 110px;      /* 글자가 없을 때도 높이를 유지해서 화면이 안 흔들리게 */
-    margin: 22px 0;
-    padding: 0 16px;
 
-    font-family: Consolas, Menlo, monospace;
+    aspect-ratio: 1 / 1;
+    margin-bottom: 14px;
+
     font-size: 44px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.cover-sm {
+    width: 92px;
+    margin: 0;
+    font-size: 34px;
+    flex-shrink: 0;
+}
+
+.cover-xs {
+    width: 48px;
+    margin: 0;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: none;
+}
+
+/* hover 시 떠오르는 초록 재생 버튼 */
+.play-fab {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    padding-left: 3px;
+
+    font-size: 15px;
+    color: var(--bg-deep);
+    background: var(--green-bright);
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45);
+
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s, transform 0.25s;
+}
+
+.song-card:hover .play-fab,
+.song-card:focus-visible .play-fab {
+    opacity: 1;
+    transform: none;
+}
+
+.card-title {
+    font-size: 15px;
     font-weight: 700;
-    letter-spacing: 2px;
+    line-height: 1.35;
 
-    background: #f4f5fb;
-    border: 2px dashed #d5d8ea;
-    border-radius: 14px;
-}
-
-/* 이미 입력해서 맞춘 부분 */
-#targetChar .typed {
-    color: #10b981;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-/* 아직 입력하지 않은 부분 */
-#targetChar .rest {
-    color: #1f2937;
+.card-artist {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* 다음에 입력할 한 글자에 밑줄 표시 */
-#targetChar .rest::first-letter {
-    border-bottom: 4px solid #6366f1;
+.card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
 }
 
-/* 틀렸을 때 빨갛게 + 흔들림 */
-#targetChar.wrong {
-    background: #fef2f2;
-    border-color: #fca5a5;
-    animation: shake 0.2s;
+.tag {
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-sub);
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 500px;
 }
-#targetChar.wrong .rest {
-    color: #dc2626;
+
+.card-best {
+    display: block;
+    margin-top: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green-bright);
 }
-#targetChar.wrong .rest::first-letter {
-    border-bottom-color: #dc2626;
+
+.card-best.is-empty {
+    color: var(--text-dim);
+    font-weight: 400;
+}
+
+/* 사용자 추가 곡 삭제 버튼 */
+.card-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+
+    width: 24px;
+    height: 24px;
+    font-size: 15px;
+    line-height: 1;
+    color: var(--text-sub);
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    border-radius: 50%;
+
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+.song-card:hover .card-remove {
+    opacity: 1;
+}
+
+.card-remove:hover {
+    color: var(--red);
+}
+
+/* ===== 공통 버튼 ===== */
+.pill-btn {
+    padding: 13px 32px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--bg-deep);
+    background: var(--green-bright);
+    border: none;
+    border-radius: 500px;
+    transition: transform 0.12s, background 0.2s;
+}
+
+.pill-btn:hover {
+    background: #24e56b;
+    transform: scale(1.04);
+}
+
+.pill-btn:active {
+    transform: scale(0.98);
+}
+
+.ghost-btn {
+    padding: 11px 22px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-sub);
+    background: transparent;
+    border: 1px solid #4a4a4a;
+    border-radius: 500px;
+    transition: color 0.15s, border-color 0.15s, transform 0.12s;
+}
+
+.ghost-btn:hover {
+    color: var(--text);
+    border-color: var(--text);
+    transform: scale(1.03);
+}
+
+.icon-btn {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    font-size: 17px;
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    transition: background 0.2s, transform 0.12s;
+}
+
+.icon-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.06);
+}
+
+:focus-visible {
+    outline: 2px solid var(--green-bright);
+    outline-offset: 2px;
+}
+
+/* =========================================================
+   화면 2 : 플레이
+   ========================================================= */
+.play-head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 34px;
+}
+
+.play-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--green-bright);
+}
+
+.play-meta h2 {
+    margin-top: 4px;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.play-artist {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-sub);
+}
+
+/* 가사 뷰 (노래방 스타일) */
+.lyric-view {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14px;
+
+    min-height: 220px;
+    padding: 34px 30px;
+
+    text-align: center;
+    background: linear-gradient(180deg, #1e1e1e, var(--bg-elev));
+    border: 1px solid var(--bg-line);
+    border-radius: var(--radius-lg);
+}
+
+.lyric-line {
+    line-height: 1.55;
+    word-break: break-word;
+}
+
+.is-prev,
+.is-next {
+    font-size: 15px;
+    color: var(--text-dim);
+    min-height: 22px;
+}
+
+.is-current {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    min-height: 46px;
+    transition: transform 0.18s;
+}
+
+/* 글자 단위 상태 */
+.ch {
+    position: relative;
+    color: var(--text-sub);
+    transition: color 0.08s;
+}
+
+.ch.is-space {
+    white-space: pre;
+}
+
+.ch.ok {
+    color: var(--green-bright);
+}
+
+.ch.bad {
+    color: var(--red);
+    background: rgba(240, 82, 109, 0.16);
+    border-radius: 3px;
+}
+
+/* 한글 조합 중 - 아직 판정하지 않은 글자 */
+.ch.composing {
+    color: var(--yellow);
+}
+
+/* 지금 입력할 위치 */
+.ch.cursor::before {
+    content: "";
+    position: absolute;
+    left: -2px;
+    top: -0.1em;
+    bottom: -0.1em;
+    width: 2px;
+    background: var(--green-bright);
+    animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    49% {
+        opacity: 1;
+    }
+
+    50%,
+    100% {
+        opacity: 0;
+    }
+}
+
+/* 목표보다 길게 친 글자 */
+.ch.extra {
+    color: var(--red);
+    opacity: 0.65;
+    text-decoration: line-through;
+}
+
+/* 줄 확정 피드백 */
+.is-current.flash-good {
+    animation: popGood 0.26s ease;
+}
+
+.is-current.flash-bad {
+    animation: shake 0.26s ease;
+}
+
+@keyframes popGood {
+    50% {
+        transform: scale(1.05);
+        filter: brightness(1.35);
+    }
 }
 
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25%      { transform: translateX(-8px); }
-    75%      { transform: translateX(8px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-9px);
+    }
+
+    75% {
+        transform: translateX(9px);
+    }
 }
 
-/* ===== 점수 / 남은 시간 ===== */
-.stats {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
+/* 입력창 */
+.type-area {
+    margin-top: 22px;
+    text-align: center;
 }
 
-#score,
-#timer {
-    padding: 10px 18px;
+#typeInput {
+    width: 100%;
+    padding: 18px 22px;
+
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+
+    background: var(--bg-elev);
+    border: 2px solid var(--bg-line);
+    border-radius: 500px;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+#typeInput::placeholder {
+    color: var(--text-dim);
+    font-weight: 400;
+}
+
+#typeInput:focus {
+    outline: none;
+    background: #202020;
+    border-color: var(--green);
+    box-shadow: 0 0 0 4px var(--green-dim);
+}
+
+#typeInput:disabled {
+    opacity: 0.5;
+}
+
+.type-hint {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+/* 카운트다운 오버레이 */
+.countdown {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+
+    display: none;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(6px);
+}
+
+.countdown.is-on {
+    display: grid;
+}
+
+.countdown span {
+    font-size: 96px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--green-bright);
+}
+
+.countdown span.pop {
+    animation: countPop 0.8s ease;
+}
+
+@keyframes countPop {
+    0% {
+        opacity: 0;
+        transform: scale(0.55);
+    }
+
+    28% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0.25;
+        transform: scale(1.12);
+    }
+}
+
+/* =========================================================
+   화면 3 : 결과
+   ========================================================= */
+.result-card {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 44px 38px;
+    text-align: center;
+
+    background: linear-gradient(180deg, #1f2f25, var(--bg-elev) 60%);
+    border: 1px solid var(--bg-line);
+    border-radius: var(--radius-lg);
+}
+
+.grade {
+    font-size: 96px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    color: var(--green-bright);
+    text-shadow: 0 0 42px rgba(29, 185, 84, 0.45);
+}
+
+.grade[data-grade="C"],
+.grade[data-grade="D"] {
+    color: var(--text-sub);
+    text-shadow: none;
+}
+
+.result-msg {
+    margin-top: 14px;
     font-size: 16px;
     font-weight: 600;
-    border-radius: 999px;
-}
-#score {
-    color: #4338ca;
-    background: #eef2ff;
-}
-#timer {
-    color: #b45309;
-    background: #fef3c7;
 }
 
-/* ===== 버튼 ===== */
-.buttons {
+.result-song {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-sub);
+}
+
+.best-badge {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--bg-deep);
+    background: var(--green-bright);
+    border-radius: 500px;
+}
+
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+
+    margin: 32px 0 0;
+    padding: 0;
+    list-style: none;
+
+    background: var(--bg-line);
+    border: 1px solid var(--bg-line);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.result-stats li {
+    padding: 18px 10px;
+    background: var(--bg-elev);
+}
+
+.stat-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.result-stats strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.prev-best {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.result-actions {
     display: flex;
     justify-content: center;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+/* =========================================================
+   하단 재생 바
+   ========================================================= */
+.nowbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+
+    display: none;
+    align-items: center;
+    gap: 20px;
+
+    height: var(--nowbar-h);
+    padding: 0 22px;
+
+    background: var(--bg-elev);
+    border-top: 1px solid var(--bg-line);
+}
+
+.nowbar.is-on {
+    display: flex;
+}
+
+.nowbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 240px;
+    min-width: 0;
+}
+
+.nowbar-meta {
+    min-width: 0;
+}
+
+.nowbar-meta strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nowbar-meta span {
+    font-size: 11px;
+    color: var(--text-sub);
+}
+
+.nowbar-center {
+    flex: 1;
+    min-width: 0;
+}
+
+.bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 620px;
+    margin: 0 auto;
+}
+
+.bar-time {
+    flex-shrink: 0;
+    min-width: 44px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-sub);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.bar-time.is-urgent {
+    color: var(--red);
+    animation: blink 1s steps(1) infinite;
+}
+
+.progress {
+    flex: 1;
+    height: 5px;
+    background: #4a4a4a;
+    border-radius: 500px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0;
+    height: 100%;
+    background: var(--green-bright);
+    border-radius: 500px;
+    transition: width 0.25s ease;
+}
+
+.nowbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 240px;
+    justify-content: flex-end;
+}
+
+.chip {
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    border-radius: 500px;
+    font-variant-numeric: tabular-nums;
+}
+
+.chip-combo {
+    color: var(--text-sub);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.chip-combo.is-hot {
+    color: var(--bg-deep);
+    background: var(--yellow);
+}
+
+.chip-score {
+    color: var(--bg-deep);
+    background: var(--green-bright);
+}
+
+/* =========================================================
+   모달
+   ========================================================= */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+}
+
+.modal[hidden] {
+    display: none;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(4px);
+}
+
+.modal-box {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 30px;
+
+    background: var(--bg-hover);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.modal-box h3 {
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.modal-sub {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-sub);
+}
+
+.field {
+    display: block;
+    margin-top: 18px;
+}
+
+.field>span {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-sub);
+}
+
+.field em {
+    font-style: normal;
+    color: var(--green-bright);
+}
+
+.field input,
+.field textarea {
+    width: 100%;
+    padding: 11px 14px;
+
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+
+    background: #121212;
+    border: 1px solid #3e3e3e;
+    border-radius: 6px;
+    resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+    outline: none;
+    border-color: var(--green-bright);
+}
+
+.modal-error {
+    margin-top: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--red);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
     gap: 10px;
     margin-top: 24px;
 }
 
-button {
-    padding: 12px 32px;
-
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 600;
-    color: #ffffff;
-
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
-}
-button:hover {
-    transform: translateY(-2px);
-    opacity: 0.92;
-}
-button:active {
-    transform: translateY(0);
-}
-button:focus-visible {
-    outline: 3px solid #a5b4fc;
-    outline-offset: 2px;
-}
-
-#startButton {
-    background: #6366f1;
-    box-shadow: 0 6px 14px rgba(99, 102, 241, 0.4);
-}
-#resetButton {
-    color: #4b5563;
-    background: #e5e7eb;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
-}
-
-/* ===== 화면이 좁을 때 ===== */
-@media (max-width: 520px) {
-    body {
-        margin: 20px 12px;
-        padding: 26px 18px 28px;
+/* =========================================================
+   반응형
+   ========================================================= */
+@media (max-width: 780px) {
+    .topbar {
+        padding: 12px 18px;
     }
-    #targetChar {
-        min-height: 90px;
+
+    .brand-tag {
+        display: none;
+    }
+
+    .content {
+        padding: 22px 18px;
+    }
+
+    .hero h1 {
+        font-size: 30px;
+    }
+
+    .card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+        gap: 12px;
+    }
+
+    .cover {
         font-size: 34px;
+    }
+
+    .is-current {
+        font-size: 22px;
+    }
+
+    .lyric-view {
+        padding: 26px 18px;
+        min-height: 180px;
+    }
+
+    #typeInput {
+        font-size: 17px;
+        padding: 15px 18px;
+    }
+
+    .result-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grade {
+        font-size: 72px;
+    }
+
+    /* 재생 바는 진행률만 남기고 압축 */
+    .nowbar-left,
+    .nowbar-right {
+        width: auto;
+    }
+
+    .nowbar-meta,
+    .chip-combo {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
     }
 }
