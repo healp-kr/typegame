@@ -1,0 +1,36 @@
+<!-- 
+    1. 아래 게임의 문제점을 발견하고,
+   개선점을 제시하세요. 정답은 없습니다. 
+    2. 디자인을 개선해보세요.
+    3. css, javascript 파일을 외부로 빼서 따로 관리하도록 변경해주시고
+    4. repository를 새로 만들어서
+    5. github 페이지에 배포해보세요 (index.html이 아니면 파일명까지 다 적어줘야 경로가 됩니다)
+ -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Game</title>
+
+    <link rel="stylesheet" href="style4.css" />
+</head>
+<body>
+    <h1>Typing Game</h1>
+    <p class="guide">아래 문자 또는 단어를 입력하세요. (소/대문자 구분)</p>
+
+    <div id="targetChar"></div>
+
+    <div class="stats">
+        <div id="score">점수: 0</div>
+        <div id="timer">남은 시간: 20</div>
+    </div>
+
+    <div class="buttons">
+        <button id="startButton" onclick="startGame()">Start</button>
+        <button id="resetButton" onclick="resetGame()">Reset</button>
+    </div>
+
+    <script src="script4.js"></script>
+</body>
+</html>
